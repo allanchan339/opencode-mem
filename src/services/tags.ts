@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { execSync } from "node:child_process";
 import { CONFIG } from "../config.js";
 import { sep, normalize, resolve, isAbsolute, basename, dirname } from "node:path";
+import { realpathSync, existsSync } from "node:fs";
 
 function sha256(input: string): string {
   return createHash("sha256").update(input).digest("hex").slice(0, 16);
@@ -66,7 +67,15 @@ export function getGitCommonDir(directory: string): string | null {
       return null;
     }
 
-    return isAbsolute(commonDir) ? normalize(commonDir) : normalize(resolve(directory, commonDir));
+    const resolved = isAbsolute(commonDir)
+      ? normalize(commonDir)
+      : normalize(resolve(directory, commonDir));
+
+    if (existsSync(resolved)) {
+      return realpathSync(resolved);
+    }
+
+    return resolved;
   } catch {
     return null;
   }
