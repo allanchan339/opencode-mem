@@ -95,6 +95,8 @@ export class OpenAIResponsesProvider extends BaseAIProvider {
         if (!response.ok) {
           const errorText = await response.text().catch(() => response.statusText);
           log("OpenAI Responses API error", {
+            provider: this.getProviderName(),
+            model: this.config.model,
             status: response.status,
             error: errorText,
             iteration: iterations,

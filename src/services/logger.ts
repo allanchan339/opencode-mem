@@ -10,31 +10,42 @@ import {
 import { homedir } from "os";
 import { join } from "path";
 
-const LOG_DIR = join(homedir(), ".opencode-mem");
-const LOG_FILE = join(LOG_DIR, "opencode-mem.log");
+function getLogFilePath(): string {
+  return process.env.OPENCODE_MEM_LOG_FILE || join(homedir(), ".opencode-mem", "opencode-mem.log");
+}
+
+function getLogDirPath(): string {
+  const logFile = getLogFilePath();
+  const lastSlash = Math.max(logFile.lastIndexOf("/"), logFile.lastIndexOf("\\"));
+  return lastSlash === -1 ? "." : logFile.slice(0, lastSlash);
+}
+
 const MAX_LOG_SIZE = 5 * 1024 * 1024;
 
 const GLOBAL_LOGGER_KEY = Symbol.for("opencode-mem.logger.initialized");
 
 function rotateLog() {
+  const logFile = getLogFilePath();
   try {
-    if (!existsSync(LOG_FILE)) return;
-    const stats = statSync(LOG_FILE);
+    if (!existsSync(logFile)) return;
+    const stats = statSync(logFile);
     if (stats.size < MAX_LOG_SIZE) return;
 
-    const oldLog = LOG_FILE + ".old";
+    const oldLog = logFile + ".old";
     if (existsSync(oldLog)) unlinkSync(oldLog);
-    renameSync(LOG_FILE, oldLog);
+    renameSync(logFile, oldLog);
   } catch {}
 }
 
 function ensureLoggerInitialized() {
   if ((globalThis as any)[GLOBAL_LOGGER_KEY]) return;
-  if (!existsSync(LOG_DIR)) {
-    mkdirSync(LOG_DIR, { recursive: true });
+  const logDir = getLogDirPath();
+  const logFile = getLogFilePath();
+  if (!existsSync(logDir)) {
+    mkdirSync(logDir, { recursive: true });
   }
   rotateLog();
-  writeFileSync(LOG_FILE, `\n--- Session started: ${new Date().toISOString()} ---\n`, {
+  writeFileSync(logFile, `\n--- Session started: ${new Date().toISOString()} ---\n`, {
     flag: "a",
   });
   (globalThis as any)[GLOBAL_LOGGER_KEY] = true;
@@ -42,9 +53,10 @@ function ensureLoggerInitialized() {
 
 export function log(message: string, data?: unknown) {
   ensureLoggerInitialized();
+  const logFile = getLogFilePath();
   const timestamp = new Date().toISOString();
   const line = data
     ? `[${timestamp}] ${message}: ${JSON.stringify(data)}\n`
     : `[${timestamp}] ${message}\n`;
-  appendFileSync(LOG_FILE, line);
+  appendFileSync(logFile, line);
 }

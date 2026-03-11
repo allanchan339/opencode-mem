@@ -157,14 +157,9 @@ async function analyzeUserProfile(
   }
 
   const { AIProviderFactory } = await import("./ai/ai-provider-factory.js");
+  const { buildMemoryProviderConfig } = await import("./ai/provider-config.js");
 
-  const providerConfig = {
-    model: CONFIG.memoryModel,
-    apiUrl: CONFIG.memoryApiUrl,
-    apiKey: CONFIG.memoryApiKey,
-    maxIterations: CONFIG.autoCaptureMaxIterations,
-    iterationTimeout: CONFIG.autoCaptureIterationTimeout,
-  };
+  const providerConfig = buildMemoryProviderConfig(CONFIG);
 
   const provider = AIProviderFactory.createProvider(CONFIG.memoryProvider, providerConfig);
 

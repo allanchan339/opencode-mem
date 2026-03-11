@@ -195,6 +195,8 @@ export class OpenAIChatCompletionProvider extends BaseAIProvider {
         if (!response.ok) {
           const errorText = await response.text().catch(() => response.statusText);
           log("OpenAI Chat Completion API error", {
+            provider: this.getProviderName(),
+            model: this.config.model,
             status: response.status,
             error: errorText,
             iteration: iterations,
@@ -222,6 +224,8 @@ export class OpenAIChatCompletionProvider extends BaseAIProvider {
 
         if (data.status && data.msg) {
           log("API returned error in response body", {
+            provider: this.getProviderName(),
+            model: this.config.model,
             status: data.status,
             msg: data.msg,
           });
@@ -234,6 +238,8 @@ export class OpenAIChatCompletionProvider extends BaseAIProvider {
 
         if (!data.choices || !data.choices[0]) {
           log("Invalid API response format", {
+            provider: this.getProviderName(),
+            model: this.config.model,
             response: JSON.stringify(data).slice(0, 1000),
             hasChoices: !!data.choices,
             choicesLength: data.choices?.length,

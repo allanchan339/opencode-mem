@@ -237,15 +237,10 @@ async function generateSummary(
   }
 
   const { AIProviderFactory } = await import("./ai/ai-provider-factory.js");
+  const { buildMemoryProviderConfig } = await import("./ai/provider-config.js");
   const { detectLanguage, getLanguageName } = await import("./language-detector.js");
 
-  const providerConfig = {
-    model: CONFIG.memoryModel,
-    apiUrl: CONFIG.memoryApiUrl,
-    apiKey: CONFIG.memoryApiKey,
-    maxIterations: CONFIG.autoCaptureMaxIterations,
-    iterationTimeout: CONFIG.autoCaptureIterationTimeout,
-  };
+  const providerConfig = buildMemoryProviderConfig(CONFIG);
 
   const provider = AIProviderFactory.createProvider(CONFIG.memoryProvider, providerConfig);
 

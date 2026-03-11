@@ -978,13 +978,11 @@ export async function handleRunTagMigrationBatch(
 ): Promise<ApiResponse<{ processed: number; total: number; hasMore: boolean }>> {
   try {
     const { AIProviderFactory } = await import("./ai/ai-provider-factory.js");
-    const providerConfig = {
-      model: CONFIG.memoryModel!,
-      apiUrl: CONFIG.memoryApiUrl!,
-      apiKey: CONFIG.memoryApiKey!,
+    const { buildMemoryProviderConfig } = await import("./ai/provider-config.js");
+    const providerConfig = buildMemoryProviderConfig(CONFIG, {
       maxIterations: 1,
       iterationTimeout: 30000,
-    };
+    });
     const provider = AIProviderFactory.createProvider(CONFIG.memoryProvider, providerConfig);
     const projectShards = shardManager.getAllShards("project", "");
 

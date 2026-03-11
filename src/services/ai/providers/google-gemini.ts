@@ -180,6 +180,8 @@ export class GoogleGeminiProvider extends BaseAIProvider {
         if (!response.ok) {
           const errorText = await response.text().catch(() => response.statusText);
           log("Gemini API error", {
+            provider: this.getProviderName(),
+            model: this.config.model,
             status: response.status,
             error: errorText,
             iteration: iterations,
