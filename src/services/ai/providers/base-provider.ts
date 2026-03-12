@@ -16,6 +16,28 @@ export interface ProviderConfig {
   extraParams?: Record<string, unknown>;
 }
 
+const PROTECTED_KEYS = new Set([
+  "model",
+  "messages",
+  "tools",
+  "tool_choice",
+  "temperature",
+  "input",
+  "instructions",
+  "conversation",
+]);
+
+export function applySafeExtraParams(
+  requestBody: Record<string, any>,
+  extraParams: Record<string, unknown>
+): void {
+  for (const [key, value] of Object.entries(extraParams)) {
+    if (!PROTECTED_KEYS.has(key)) {
+      requestBody[key] = value;
+    }
+  }
+}
+
 export abstract class BaseAIProvider {
   protected config: ProviderConfig;
 

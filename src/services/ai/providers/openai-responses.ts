@@ -1,4 +1,4 @@
-import { BaseAIProvider, type ToolCallResult } from "./base-provider.js";
+import { BaseAIProvider, type ToolCallResult, applySafeExtraParams } from "./base-provider.js";
 import { AISessionManager } from "../session/ai-session-manager.js";
 import { ToolSchemaConverter, type ChatCompletionTool } from "../tools/tool-schema.js";
 import { log } from "../../logger.js";
@@ -81,7 +81,7 @@ export class OpenAIResponsesProvider extends BaseAIProvider {
         }
 
         if (this.config.extraParams) {
-          Object.assign(requestBody, this.config.extraParams);
+          applySafeExtraParams(requestBody, this.config.extraParams);
         }
 
         const response = await fetch(`${this.config.apiUrl}/responses`, {
