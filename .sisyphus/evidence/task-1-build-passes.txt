@@ -1,0 +1,2 @@
+$ bunx tsc && mkdir -p dist/web && cp -r src/web/* dist/web/
+Build exit code: 0

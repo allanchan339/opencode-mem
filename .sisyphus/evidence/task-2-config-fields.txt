@@ -1,0 +1,8 @@
+45:  opencodeProvider?: string;
+46:  opencodeModel?: string;
+90:    | "opencodeProvider"
+91:    | "opencodeModel"
+105:  opencodeProvider?: string;
+106:  opencodeModel?: string;
+468:  opencodeProvider: fileConfig.opencodeProvider,
+469:  opencodeModel: fileConfig.opencodeModel,

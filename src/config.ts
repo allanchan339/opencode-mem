@@ -42,6 +42,8 @@ interface OpenCodeMemConfig {
   memoryApiKey?: string;
   memoryTemperature?: number | false;
   memoryExtraParams?: Record<string, unknown>;
+  opencodeProvider?: string;
+  opencodeModel?: string;
   vectorBackend?: "usearch-first" | "usearch" | "exact-scan";
   aiSessionRetentionDays?: number;
   webServerEnabled?: boolean;
@@ -85,6 +87,8 @@ const DEFAULTS: Required<
     | "memoryProvider"
     | "memoryTemperature"
     | "memoryExtraParams"
+    | "opencodeProvider"
+    | "opencodeModel"
     | "autoCaptureLanguage"
     | "userEmailOverride"
     | "userNameOverride"
@@ -98,6 +102,8 @@ const DEFAULTS: Required<
   memoryProvider?: "openai-chat" | "openai-responses" | "anthropic";
   memoryTemperature?: number | false;
   memoryExtraParams?: Record<string, unknown>;
+  opencodeProvider?: string;
+  opencodeModel?: string;
   vectorBackend?: "usearch-first" | "usearch" | "exact-scan";
   autoCaptureLanguage?: string;
   userEmailOverride?: string;
@@ -459,6 +465,8 @@ export const CONFIG = {
   memoryApiKey: resolveSecretValue(fileConfig.memoryApiKey),
   memoryTemperature: fileConfig.memoryTemperature,
   memoryExtraParams: fileConfig.memoryExtraParams,
+  opencodeProvider: fileConfig.opencodeProvider,
+  opencodeModel: fileConfig.opencodeModel,
   vectorBackend: (fileConfig.vectorBackend ?? "usearch-first") as
     | "usearch-first"
     | "usearch"

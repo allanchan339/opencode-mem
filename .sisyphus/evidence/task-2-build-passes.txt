@@ -1,0 +1,1 @@
+$ bunx tsc && mkdir -p dist/web && cp -r src/web/* dist/web/
