@@ -72,16 +72,27 @@ async function main() {
       sharpBuilt = true;
       break;
     } catch {
-      log(`sharp import failed at ${sharpDir}, rebuilding...`);
-      if (run("npm rebuild sharp", { cwd: sharpDir })) {
-        sharpBuilt = true;
-        break;
+      log(`sharp import failed at ${sharpDir}, running install script...`);
+      // Run sharp's install script directly (npm rebuild skips it)
+      const installScript = join(sharpDir, "install/libvips.js");
+      const dllCopy = join(sharpDir, "install/dll-copy.js");
+      if (existsSync(installScript)) {
+        run(`node "${installScript}"`, { cwd: sharpDir });
       }
-      run("npm install sharp", { cwd: basePath });
+      if (existsSync(dllCopy)) {
+        run(`node "${dllCopy}"`, { cwd: sharpDir });
+      }
+      // Try prebuild-install for prebuilt binaries
+      run("npx prebuild-install", { cwd: sharpDir });
+      // Fallback: node-gyp rebuild
+      if (!existsSync(join(sharpDir, "build/Release/sharp-linux-x64.node"))) {
+        run("node-gyp rebuild", { cwd: sharpDir });
+      }
       try {
         const sharpRequire = createRequire(join(sharpDir, "lib/sharp.js"));
         sharpRequire("sharp");
         sharpBuilt = true;
+        log(`sharp rebuilt successfully at ${sharpDir}`);
         break;
       } catch {
         log(`sharp rebuild failed at ${sharpDir}`);
