@@ -16,6 +16,8 @@
 
 import { execSync } from "node:child_process";
 import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { createRequire } from "node:module";
 
 function log(msg) {
   process.stderr.write(`[opencode-mem prepare] ${msg}\n`);
@@ -50,15 +52,45 @@ async function main() {
   }
 
   // --- Step 3: Ensure sharp native module ---
+  // sharp may be at this level OR the parent level (git install wrapper)
   log("Checking sharp native module...");
-  try {
-    await import("sharp");
-    log("sharp OK.");
-  } catch {
-    log("sharp import failed, attempting rebuild...");
-    if (!run("npm rebuild sharp")) {
-      run("npm install sharp");
+  const sharpPaths = [
+    process.cwd(),
+    join(process.cwd(), ".."),
+    join(process.cwd(), "..", ".."),
+  ];
+
+  let sharpBuilt = false;
+  for (const basePath of sharpPaths) {
+    const sharpDir = join(basePath, "node_modules", "sharp");
+    if (!existsSync(sharpDir)) continue;
+
+    try {
+      const sharpRequire = createRequire(join(sharpDir, "lib/sharp.js"));
+      sharpRequire("sharp");
+      log(`sharp OK at ${sharpDir}`);
+      sharpBuilt = true;
+      break;
+    } catch {
+      log(`sharp import failed at ${sharpDir}, rebuilding...`);
+      if (run("npm rebuild sharp", { cwd: sharpDir })) {
+        sharpBuilt = true;
+        break;
+      }
+      run("npm install sharp", { cwd: basePath });
+      try {
+        const sharpRequire = createRequire(join(sharpDir, "lib/sharp.js"));
+        sharpRequire("sharp");
+        sharpBuilt = true;
+        break;
+      } catch {
+        log(`sharp rebuild failed at ${sharpDir}`);
+      }
     }
+  }
+
+  if (!sharpBuilt) {
+    log("WARNING: Could not build sharp native module.");
   }
 
   // --- Step 4: Husky (only when .git exists) ---
