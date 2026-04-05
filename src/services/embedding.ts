@@ -11,14 +11,25 @@ let _transformers: {
   env: (typeof import("@xenova/transformers"))["env"];
 } | null = null;
 
+let _transformersLoadError: Error | null = null;
+
 async function ensureTransformersLoaded(): Promise<NonNullable<typeof _transformers>> {
   if (_transformers !== null) return _transformers;
-  const mod = await import("@xenova/transformers");
-  mod.env.allowLocalModels = true;
-  mod.env.allowRemoteModels = true;
-  mod.env.cacheDir = join(CONFIG.storagePath, ".cache");
-  _transformers = mod;
-  return _transformers!;
+  if (_transformersLoadError !== null) throw _transformersLoadError;
+  try {
+    const mod = await import("@xenova/transformers");
+    mod.env.allowLocalModels = true;
+    mod.env.allowRemoteModels = true;
+    mod.env.cacheDir = join(CONFIG.storagePath, ".cache");
+    _transformers = mod;
+    return _transformers!;
+  } catch (error) {
+    _transformersLoadError = error as Error;
+    log("@xenova/transformers failed to load (local embeddings unavailable)", {
+      error: String(error),
+    });
+    throw error;
+  }
 }
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
