@@ -6,18 +6,38 @@ const TIMEOUT_MS = 30000;
 const GLOBAL_EMBEDDING_KEY = Symbol.for("opencode-mem.embedding.instance");
 const MAX_CACHE_SIZE = 100;
 
+// @xenova/transformers imports sharp (native image processing module) at the
+// top level of its main entry point, even for text-only models. In environments
+// where native modules can't be compiled (e.g., OpenCode's isolated plugin
+// directory), this causes the entire plugin to fail to load.
+//
+// We wrap the import in a try/catch so the plugin still loads. Local embeddings
+// will be unavailable, but API embeddings and all other features still work.
+// See: https://github.com/tickernelz/opencode-mem/issues/85
 let _transformers: {
   pipeline: (typeof import("@xenova/transformers"))["pipeline"];
   env: (typeof import("@xenova/transformers"))["env"];
 } | null = null;
+let _transformersLoadError: string | null = null;
 
 async function ensureTransformersLoaded(): Promise<NonNullable<typeof _transformers>> {
   if (_transformers !== null) return _transformers;
-  const mod = await import("@xenova/transformers");
-  mod.env.allowLocalModels = true;
-  mod.env.allowRemoteModels = true;
-  mod.env.cacheDir = join(CONFIG.storagePath, ".cache");
-  _transformers = mod;
+  if (_transformersLoadError) {
+    throw new Error(`@xenova/transformers unavailable: ${_transformersLoadError}`);
+  }
+  try {
+    const mod = await import("@xenova/transformers");
+    mod.env.allowLocalModels = true;
+    mod.env.allowRemoteModels = true;
+    mod.env.cacheDir = join(CONFIG.storagePath, ".cache");
+    _transformers = mod;
+  } catch (error) {
+    _transformersLoadError = String(error);
+    log("@xenova/transformers failed to load (local embeddings unavailable)", {
+      error: String(error),
+    });
+    throw error;
+  }
   return _transformers!;
 }
 
@@ -51,6 +71,7 @@ export class EmbeddingService {
 
   private async initializeModel(progressCallback?: (progress: any) => void): Promise<void> {
     try {
+      // API mode doesn't need @xenova/transformers
       if (CONFIG.embeddingApiUrl && CONFIG.embeddingApiKey) {
         this.isWarmedUp = true;
         return;
@@ -62,7 +83,15 @@ export class EmbeddingService {
       this.isWarmedUp = true;
     } catch (error) {
       this.initPromise = null;
-      log("Failed to initialize embedding model", { error: String(error) });
+      const msg = String(error);
+      if (msg.includes("sharp") || msg.includes("native") || msg.includes("Missing")) {
+        log(
+          "Local embedding model unavailable (native module issue). Configure embeddingApiUrl/embeddingApiKey or ignore if not needed.",
+          { error: msg }
+        );
+      } else {
+        log("Failed to initialize embedding model", { error: msg });
+      }
       throw error;
     }
   }
